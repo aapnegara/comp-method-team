@@ -1,0 +1,10 @@
+! Role 4, Q7 -- solver scan: hll (compare with tvdlf reference)
+! Run: mpirun -np 4 ./amrvac -i common.par schemes/Q7_hll.par
+&filelist
+ base_filename='output/Q7_hll'
+/
+&methodlist
+ time_stepper='threestep'
+ flux_scheme=20*'hll'
+ limiter=20*'minmod'
+/

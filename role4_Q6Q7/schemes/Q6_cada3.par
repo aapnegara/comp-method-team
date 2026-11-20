@@ -1,0 +1,10 @@
+! Role 4, Q6 -- limiter scan: cada3
+! Run: mpirun -np 4 ./amrvac -i common.par schemes/Q6_cada3.par
+&filelist
+ base_filename='output/Q6_cada3'
+/
+&methodlist
+ time_stepper='threestep'
+ flux_scheme=20*'tvdlf'
+ limiter=20*'cada3'
+/

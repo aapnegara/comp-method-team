@@ -1,0 +1,10 @@
+! Role 4, Q7 -- full Roe-based TVD scheme; AMRVAC requires onestep with tvd
+! Run: mpirun -np 4 ./amrvac -i common.par schemes/Q7_roe_tvd.par
+&filelist
+ base_filename='output/Q7_roe_tvd'
+/
+&methodlist
+ time_stepper='onestep'
+ flux_scheme=20*'tvd'
+ limiter=20*'minmod'
+/
