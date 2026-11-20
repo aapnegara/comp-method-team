@@ -91,6 +91,7 @@ Then submit the main runs:
 ./submit_all.sh                       # the 7 controlled runs
 ./submit_all.sh roe_tvd96             # optional, after the 7 are done
 NTASKS=8 WALLTIME=08:00:00 ./submit_all.sh koren96   # example override
+PARTITION=batch_sapphirerapids ./submit_all.sh       # default is batch_icelake
 ```
 
 **If a run reaches its walltime:** `job.slurm` passes an extra `walltime.par`
