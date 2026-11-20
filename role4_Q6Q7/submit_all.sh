@@ -11,8 +11,13 @@
 # Options:  --dry-run (print, do not submit)   --force (start again from t=0 in a used run dir)
 #           --resume (continue from the latest snapshot; keeps existing output)
 # Env:      PARTITION=batch_icelake  NTASKS=4  WALLTIME=04:00:00  AMRVAC_EXE=<path>  (default: ./build/amrvac)
+#           CLUSTER=wice  ACCOUNT=lp_edu_amrvac  AMRVAC_MODULES=foss/2025a
+#           Other cluster (e.g. IvS):  CLUSTER= ACCOUNT= AMRVAC_MODULES= PARTITION=ivs-short ./submit_all.sh
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")" && pwd)
+CLUSTER=${CLUSTER-wice}
+ACCOUNT=${ACCOUNT-lp_edu_amrvac}
+export AMRVAC_MODULES=${AMRVAC_MODULES-foss/2025a}
 PARTITION=${PARTITION:-batch_icelake}   # keep ALL runs on one partition (fair cost comparison)
 NTASKS=${NTASKS:-4}
 WALLTIME=${WALLTIME:-04:00:00}
@@ -49,9 +54,12 @@ for name in "${runs[@]}"; do
     cp "$ROOT/pars/$name.par" "$dir/$name.par"
   fi
   wt_min=$(awk -F: '{ if (NF==3) print $1*60+$2; else if (NF==2) print $1; else print $1 }' <<< "${wt#*-}")
-  cmd=(sbatch --partition="$PARTITION" --nodes=1 --ntasks="$NTASKS" --time="$wt" --job-name="r4_$name" --chdir="$dir"
+  site=()
+  [ -n "$CLUSTER" ] && site+=(--clusters="$CLUSTER")
+  [ -n "$ACCOUNT" ] && site+=(--account="$ACCOUNT")
+  cmd=(sbatch "${site[@]}" --partition="$PARTITION" --nodes=1 --ntasks="$NTASKS" --time="$wt" --job-name="r4_$name" --chdir="$dir"
        --output="$dir/slurm-%j.out" --export=ALL,RUN="$name",AMRVAC_EXE="$AMRVAC_EXE",WALLTIME_MIN="$wt_min",RESUME="$RESUME"
        "$ROOT/job.slurm")
   if [ $DRY -eq 1 ]; then echo "[dry-run] ${cmd[*]}"; else echo "submit $name"; "${cmd[@]}"; fi
 done
-echo "Monitor with:  squeue -M wice -u \$USER"
+echo "Monitor with:  squeue ${CLUSTER:+-M $CLUSTER} -u \$USER"

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#SBATCH --clusters=wice
-#SBATCH --account=lp_edu_amrvac
 #SBATCH --nodes=1
 #SBATCH --ntasks=4
 #SBATCH --time=04:00:00
@@ -15,8 +13,12 @@
 set -uo pipefail
 : "${RUN:?RUN not set}" "${AMRVAC_EXE:?AMRVAC_EXE not set}"
 
-module purge
-module load foss/2025a
+# Toolchain: wICE default foss/2025a; set AMRVAC_MODULES="" on clusters without modules.
+AMRVAC_MODULES=${AMRVAC_MODULES-foss/2025a}
+if [ -n "$AMRVAC_MODULES" ] && type module >/dev/null 2>&1; then
+  module purge
+  module load $AMRVAC_MODULES
+fi
 export OMP_NUM_THREADS=1
 
 mkdir -p output
@@ -35,7 +37,7 @@ else
   : > timing.txt
 fi
 {
-  echo "run=$RUN  jobid=${SLURM_JOB_ID:-}  ntasks=${SLURM_NTASKS:-}  nodes=${SLURM_JOB_NODELIST:-}"
+  echo "run=$RUN  host=$(hostname)  jobid=${SLURM_JOB_ID:-}  ntasks=${SLURM_NTASKS:-}  nodes=${SLURM_JOB_NODELIST:-}"
   echo "exe=$AMRVAC_EXE  amrvac_commit=$(git -C "${AMRVAC_DIR:-/nonexistent}" log -1 --format=%h 2>/dev/null || echo unknown)"
   echo "start=$(date -Is)"
   echo "wall_time_max_hours=$STOP_H  resume=${RESUME:-0}"

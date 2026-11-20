@@ -149,3 +149,17 @@ inside the domain, and the y_max boundary should not matter by t = 5.
   not switch off `small_values_method` silently.
 - Runs at a single resolution show differences between schemes, not convergence.
   Link this to Yitske's resolution study (Q5) for the order-of-accuracy discussion.
+
+## Running on another SLURM cluster (e.g. the IvS cluster)
+
+The scripts default to wICE. On a cluster without the VSC module system, account or
+`-M` cluster flag, clear those settings:
+
+```bash
+export AMRVAC_DIR=/path/to/amrvac        # use the same commit as on wICE (773c68c4)
+./build.sh
+CLUSTER= ACCOUNT= AMRVAC_MODULES= PARTITION=ivs-short WALLTIME=00:45:00 ./submit_all.sh
+```
+
+Run all 7 cases on the **same** machine and partition, otherwise the wall times
+cannot be compared.
