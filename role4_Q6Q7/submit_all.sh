@@ -49,7 +49,7 @@ for name in "${runs[@]}"; do
     cp "$ROOT/pars/$name.par" "$dir/$name.par"
   fi
   wt_min=$(awk -F: '{ if (NF==3) print $1*60+$2; else if (NF==2) print $1; else print $1 }' <<< "${wt#*-}")
-  cmd=(sbatch --partition="$PARTITION" --ntasks="$NTASKS" --time="$wt" --job-name="r4_$name" --chdir="$dir"
+  cmd=(sbatch --partition="$PARTITION" --nodes=1 --ntasks="$NTASKS" --time="$wt" --job-name="r4_$name" --chdir="$dir"
        --output="$dir/slurm-%j.out" --export=ALL,RUN="$name",AMRVAC_EXE="$AMRVAC_EXE",WALLTIME_MIN="$wt_min",RESUME="$RESUME"
        "$ROOT/job.slurm")
   if [ $DRY -eq 1 ]; then echo "[dry-run] ${cmd[*]}"; else echo "submit $name"; "${cmd[@]}"; fi

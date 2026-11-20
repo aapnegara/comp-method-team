@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --clusters=wice
 #SBATCH --account=lp_edu_amrvac
+#SBATCH --nodes=1
 #SBATCH --ntasks=4
 #SBATCH --time=04:00:00
 #SBATCH --job-name=role4
