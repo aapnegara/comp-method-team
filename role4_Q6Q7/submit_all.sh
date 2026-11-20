@@ -7,17 +7,19 @@
 #   ./submit_all.sh                        the 7 main runs
 #   ./submit_all.sh hllc96 koren96         selected runs
 #   ./submit_all.sh roe_tvd96              optional Roe run
-# Options:  --dry-run (print, do not submit)   --force (allow reusing a run dir)
+#   ./submit_all.sh --resume hllc96        continue a run that stopped at its walltime
+# Options:  --dry-run (print, do not submit)   --force (start again from t=0 in a used run dir)
+#           --resume (continue from the latest snapshot; keeps existing output)
 # Env:      NTASKS=4  WALLTIME=04:00:00  AMRVAC_EXE=<path>  (default: ./build/amrvac)
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")" && pwd)
 NTASKS=${NTASKS:-4}
 WALLTIME=${WALLTIME:-04:00:00}
 AMRVAC_EXE=${AMRVAC_EXE:-$ROOT/build/amrvac}
-DRY=0; FORCE=0; TEST=0; runs=()
+DRY=0; FORCE=0; TEST=0; RESUME=0; runs=()
 for a in "$@"; do
   case $a in
-    --dry-run) DRY=1 ;; --force) FORCE=1 ;; --test) TEST=1 ;;
+    --dry-run) DRY=1 ;; --force) FORCE=1 ;; --test) TEST=1 ;; --resume) RESUME=1 ;;
     *) runs+=("$a") ;;
   esac
 done
@@ -27,12 +29,16 @@ done
 
 for name in "${runs[@]}"; do
   dir=$ROOT/runs/$name
-  if [ -d "$dir/output" ] && [ -n "$(ls -A "$dir/output" 2>/dev/null)" ] && [ $FORCE -eq 0 ]; then
+  if [ $RESUME -eq 1 ]; then
+    ls "$dir"/output/"$name"[0-9][0-9][0-9][0-9].dat >/dev/null 2>&1 || { echo "SKIP $name: nothing to resume"; continue; }
+  elif [ -d "$dir/output" ] && [ -n "$(ls -A "$dir/output" 2>/dev/null)" ] && [ $FORCE -eq 0 ]; then
     echo "SKIP $name: $dir/output is not empty (use --force, or move it away first)"; continue
   fi
   mkdir -p "$dir/output"
   wt=$WALLTIME
-  if [ "$name" = test_baseline96 ]; then
+  if [ $RESUME -eq 1 ]; then
+    :   # keep the existing <name>.par
+  elif [ "$name" = test_baseline96 ]; then
     sed -e "s|^ base_filename=.*| base_filename='output/test_baseline96'|" \
         -e "s|^ time_max=.*| time_max=0.5d0|" \
         -e "s|^ dtsave(2)=.*| dtsave(2)=0.1d0|" "$ROOT/pars/baseline96.par" > "$dir/$name.par"
@@ -41,8 +47,9 @@ for name in "${runs[@]}"; do
     [ -f "$ROOT/pars/$name.par" ] || { echo "ERROR: no pars/$name.par"; exit 1; }
     cp "$ROOT/pars/$name.par" "$dir/$name.par"
   fi
+  wt_min=$(awk -F: '{ if (NF==3) print $1*60+$2; else if (NF==2) print $1; else print $1 }' <<< "${wt#*-}")
   cmd=(sbatch --ntasks="$NTASKS" --time="$wt" --job-name="r4_$name" --chdir="$dir"
-       --output="$dir/slurm-%j.out" --export=ALL,RUN="$name",AMRVAC_EXE="$AMRVAC_EXE"
+       --output="$dir/slurm-%j.out" --export=ALL,RUN="$name",AMRVAC_EXE="$AMRVAC_EXE",WALLTIME_MIN="$wt_min",RESUME="$RESUME"
        "$ROOT/job.slurm")
   if [ $DRY -eq 1 ]; then echo "[dry-run] ${cmd[*]}"; else echo "submit $name"; "${cmd[@]}"; fi
 done

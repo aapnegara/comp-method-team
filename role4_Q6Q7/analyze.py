@@ -112,9 +112,20 @@ def read_log(path):
 
 
 def read_kv(path):
+    """key=value pairs from timing.txt; wall_seconds is SUMMED over resumed parts."""
     if not path.is_file():
         return {}
-    return dict(l.split('=', 1) for l in path.read_text().split('\n') if '=' in l and ' ' not in l.split('=')[0])
+    kv, wall = {}, 0
+    for line in path.read_text().splitlines():
+        for tok in line.split():
+            if '=' in tok:
+                k, v = tok.split('=', 1)
+                kv[k] = v
+                if k == 'wall_seconds':
+                    wall += int(v)
+    if 'wall_seconds' in kv:
+        kv['wall_seconds'] = str(wall)
+    return kv
 
 
 def scheme_of(par):

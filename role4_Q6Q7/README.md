@@ -93,6 +93,17 @@ Then submit the main runs:
 NTASKS=8 WALLTIME=08:00:00 ./submit_all.sh koren96   # example override
 ```
 
+**If a run reaches its walltime:** `job.slurm` passes an extra `walltime.par`
+with `wall_time_max` = SLURM walltime − 5 min. AMRVAC then leaves its time loop
+by itself and writes the current state as a final snapshot, so nothing is lost.
+`timing.txt` shows `t_reached` < 5. Continue from the latest `.dat` with:
+
+```bash
+WALLTIME=01:00:00 ./submit_all.sh --resume hllc96
+```
+
+`analyze.py` adds up `wall_seconds` over all parts of a resumed run.
+
 Each run lives in `runs/<name>/` (`<name>.par`, `output/`, `<name>.stdout`,
 `timing.txt`, `slurm-<id>.out`). A non-empty `output/` is never overwritten
 unless you pass `--force`. Your earlier smoke/baseline outputs in `test/` are
